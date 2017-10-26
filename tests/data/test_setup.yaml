@@ -1,0 +1,9 @@
+# in folder where fasta files are
+in_folder: data
+# out folder where read files will be written
+out_folder: out_data
+
+art_illumina:
+  in: E_coli.fasta
+  out: ../test_out
+
