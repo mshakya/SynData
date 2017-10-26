@@ -2,8 +2,6 @@
 
 """Check design."""
 from __future__ import print_function
-from plumbum.cmd import art_illumina
-
 
 def call_art_illumina(IN, out,
                       paired=None,
