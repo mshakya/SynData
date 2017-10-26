@@ -8,10 +8,10 @@ from syndata import call_art_illumina
 
 
 def test_call_art_illumina():
-    x = call_art_illumina(IN="test.fna", out="migun")
+    x = call_art_illumina(IN="test.fna", out="out_data")
     print(x)
     assert len(x) == 10
 
 def test_call_art_illumina2():
     x = call_art_illumina(IN="data/E_coli.fasta", out="out_data")
-    assert x == ['--in', 'data/E_coli.fasta', '--seqSys', 'MSv1', '--len', 250, '--fcov', 10, '--out', 'migun']
+    assert x == ['--in', 'data/E_coli.fasta', '--seqSys', 'MSv1', '--len', 250, '--fcov', 10, '--out', 'out_data']
