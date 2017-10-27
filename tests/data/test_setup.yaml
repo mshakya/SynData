@@ -1,9 +1,6 @@
 # in folder where fasta files are
-in_folder: data
+in_folder: tests/data
 # out folder where read files will be written
-out_folder: out_data
+out_folder: tests/out_data
 
-art_illumina:
-  in: E_coli.fasta
-  out: ../test_out
 
