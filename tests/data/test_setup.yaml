@@ -1,6 +1,24 @@
-# in folder where fasta files are
+
 in_folder: tests/data
-# out folder where read files will be written
 out_folder: tests/out_data
 
+metagenome: True
+simulate_strains: False
+    # ref_simulate:
 
+coverage:
+    profile: False
+    distribution: equal
+
+
+art_illumina:
+    errfree: True
+    paired: True
+    fcov: 10
+    seqSys: MS
+    out: ref
+    sdev: 10
+    samout: True
+    mflen: 200
+    len: 150
+    noALN: True
