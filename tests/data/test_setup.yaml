@@ -2,14 +2,13 @@
 in_folder: tests/data
 out_folder: tests/out_data
 
-metagenome: True
+
 simulate_strains: False
     # ref_simulate:
-
-coverage:
-    profile: False
+metagenome: True
+metagenome_options:
     distribution: equal
-
+    metagenome_prefix: test_meta
 
 art_illumina:
     errfree: True
