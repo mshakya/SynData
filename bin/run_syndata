@@ -12,13 +12,13 @@ import os
 import sys
 import yaml
 import argparse
+import luigi
 dir_path = os.path.dirname(os.path.realpath(__file__))
 lib_path = os.path.abspath(os.path.join(dir_path, '..'))
 bin_path = os.path.join(lib_path, 'bin')
 sys.path.append(lib_path)
 os.environ["PATH"] += os.pathsep + bin_path
-from syndata import call_art_illumina
-# import luigi
+from syndata import art_illumina
 
 
 def cmdline_parser():
@@ -64,13 +64,34 @@ def main():
     args = parser.parse_args()
 
     config = yaml.load(open(args.IN_YAML))
+    print(config)
+    art_illumina_config = config['art_illumina']
+    metagenome_config = config['metagenome_options']
 
-    fasta_input = [os.path.abspath(each) for each in os.listdir(config['in_folder']) if each.endswith('.fasta')]
-    
-    for fasta_file in fasta_input:
-        fasta_option = call_art_illumina(input=fasta_file, out=config['out_folder'])
+    fasta_input = get_files_list(config['in_folder'], (".fasta", ".fna"))
 
-        print(fasta_option)
+    no_of_jobs = sum(1 for x in fasta_input)
+    ref_list = get_files_list(config['in_folder'],(".fasta", ".fna"))
+    luigi.interface.build([art_illumina.RunAllArtIllumina(ref_list=list(ref_list),
+                                                          art_options=art_illumina_config,
+                                                          metagenome=config['metagenome'],
+                                                          distribution=metagenome_config['distribution'])],
+                          local_scheduler=True, workers=no_of_jobs)
+
+
+def get_files_list(dir, ext):
+    """
+    Return absolute path of files with given extension.
+
+    given dir : directory where files are
+    give ext : a list or tuple of list of extension
+
+    """
+
+    for dirpath, _, filenames in os.walk(dir):
+        for f in filenames:
+            if f.endswith(ext):
+                yield os.path.abspath(os.path.join(dirpath, f))
 
 
 if __name__ == '__main__':
