@@ -64,18 +64,25 @@ def main():
     args = parser.parse_args()
 
     config = yaml.load(open(args.IN_YAML))
-    print(config)
     art_illumina_config = config['art_illumina']
     metagenome_config = config['metagenome_options']
 
     fasta_input = get_files_list(config['in_folder'], (".fasta", ".fna"))
 
     no_of_jobs = sum(1 for x in fasta_input)
-    ref_list = get_files_list(config['in_folder'],(".fasta", ".fna"))
+    ref_list = get_files_list(config['in_folder'], (".fasta", ".fna"))
     luigi.interface.build([art_illumina.RunAllArtIllumina(ref_list=list(ref_list),
                                                           art_options=art_illumina_config,
                                                           metagenome=config['metagenome'],
-                                                          distribution=metagenome_config['distribution'])],
+                                                          distribution=metagenome_config['distribution'],
+                                                          out_dir=config['out_folder']),
+
+                          art_illumina.MergeSynFiles(distribution=metagenome_config['distribution'],
+                                                     ref_list=list(ref_list),
+                                                     art_options=art_illumina_config,
+                                                     metagenome=config['metagenome'],
+                                                     metagenome_options=metagenome_config,
+                                                     out_dir=config['out_folder'])],
                           local_scheduler=True, workers=no_of_jobs)
 
 

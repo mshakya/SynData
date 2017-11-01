@@ -5,44 +5,44 @@ from __future__ import print_function
 import os
 import re
 import luigi
+import shutil
 from luigi import Parameter, LocalTarget, ExternalTask, ListParameter, DictParameter, BoolParameter
 from luigi.util import requires
-from plumbum.cmd import art_illumina, cat, mv
+from plumbum.cmd import art_illumina, cat
 from syndata import coverage
 
 
 def call_art_illumina(in_fasta, art_para_dic):
     """
-A function to run art illumina.
+    A function to run art illumina.
 
-This is a wrapper function for art_illumina
-"""
-# list that are optional
-
+    This is a wrapper function for art_illumina
+    """
+    # list that are optional
     art_option_dic = {"amplicon": "--amplicon",
-                                        "cigarM": "--cigarM",
-                                            "delRate": "delRate",
-                                            "delRate2": "delRate2",
-                                            "errfree": "--errfree",
-                                            "fcov": "--fcov",
-                                            "insRate": "--insRate",
-                                            "insRate2": "--insRate2",
-                                            "len": "--len",
-                                            "mflen": "--mflen",
-                                            "matepair": "--matepair",
-                                            "noALN": "--noALN",
-                                            "out": "--out",
-                                            "paired": "--paired",
-                                            "qprof1": "--qprof1",
-                                            "qprof2": "--qprof2",
-                                            "qshift": "--qShift",
-                                            "qShift2": "--qShift2",
-                                            "rcount": "--rcount",
-                                            "rs": "--rndSeed",
-                                            "sdev": "--sdev",
-                                            "samout": "--samout",
-                                            "seqProf": "--seqProf",
-                                            "seqSys": "--seqSys"}
+                      "cigarM": "--cigarM",
+                      "delRate": "delRate",
+                      "delRate2": "delRate2",
+                      "errfree": "--errfree",
+                      "fcov": "--fcov",
+                      "insRate": "--insRate",
+                      "insRate2": "--insRate2",
+                      "len": "--len",
+                      "mflen": "--mflen",
+                      "matepair": "--matepair",
+                      "noALN": "--noALN",
+                      "out": "--out",
+                      "paired": "--paired",
+                      "qprof1": "--qprof1",
+                      "qprof2": "--qprof2",
+                      "qshift": "--qShift",
+                      "qShift2": "--qShift2",
+                      "rcount": "--rcount",
+                      "rs": "--rndSeed",
+                      "sdev": "--sdev",
+                      "samout": "--samout",
+                      "seqProf": "--seqProf",
+                      "seqSys": "--seqSys"}
 
     art_options = ["--in", in_fasta]
     for key, value in art_para_dic.iteritems():
@@ -51,10 +51,10 @@ This is a wrapper function for art_illumina
                 art_options.append(art_option_dic[key])
             elif value is False:
                 next
-            else:
-                flag = art_option_dic[key]
-                art_options.append(flag)
-                art_options.append(value)
+        else:
+            flag = art_option_dic[key]
+            art_options.append(flag)
+            art_options.append(value)
 
     return art_options
 
@@ -78,7 +78,7 @@ class RunArtIllumina(luigi.Task):
 
     ref_fasta = Parameter()
     art_options = DictParameter()
-    out_dir = DictParameter()
+    out_dir = Parameter()
 
     def requires(self):
         """Require fasta."""
@@ -89,7 +89,7 @@ class RunArtIllumina(luigi.Task):
         """ART output."""
         paired = self.art_options['paired']
         if paired is True:
-            out_file = self.art_options['out'] + "1.fq"
+            out_file = self.out_dir + "/" + self.art_options['out'] + "1.fq"
         else:
             out_file = self.art_options['out'] + ".fq"
         return LocalTarget(out_file)
@@ -99,17 +99,11 @@ class RunArtIllumina(luigi.Task):
         art_options = call_art_illumina(in_fasta=self.ref_fasta, art_para_dic=self.art_options)
         art_cmd = art_illumina[art_options]
         art_cmd()
-        mv_fq = ["*.fq", self.out_dir]
-        mv_fq_cmd = mv[mv_fq]
-        mv_fq_cmd()
+        move_files("fq", os.getcwd(), os.path.abspath(self.out_dir))
         if self.art_options['samout'] is True:
-            mv_sam = ["*.sam", self.out_dir]
-            mv_sam_cmd = mv[mv_sam]
-            mv_sam_cmd()
+            move_files("sam", os.getcwd(), os.path.abspath(self.out_dir))
         if self.art_options['noALN'] is False:
-            mv_aln = ["*.aln", self.out_dir]
-            mv_aln_cmd = mv[mv_aln]
-            mv_aln_cmd
+            move_files("aln", os.getcwd(), os.path.abspath(self.out_dir))
 
 
 class RunAllArtIllumina(luigi.WrapperTask):
@@ -119,6 +113,7 @@ class RunAllArtIllumina(luigi.WrapperTask):
     art_options = DictParameter()
     metagenome = BoolParameter(default=False)
     distribution = Parameter()
+    out_dir = Parameter()
 
     def requires(self):
         """A wrapper for running art illumina."""
@@ -131,10 +126,12 @@ class RunAllArtIllumina(luigi.WrapperTask):
             for ref_fasta in self.ref_list:
                 art_options_dic['fcov'] = cov_dic[ref_fasta]
                 art_options_dic['out'] = re.split('.fasta|.fna', os.path.basename(ref_fasta))[0]
-                yield RunArtIllumina(ref_fasta=ref_fasta, art_options=art_options_dic)
+                yield RunArtIllumina(ref_fasta=ref_fasta,
+                                     art_options=art_options_dic,
+                                     out_dir=self.out_dir)
 
 
-@requires(RunArtIllumina)
+@requires(RunAllArtIllumina)
 class MergeSynFiles(luigi.Task):
     """Merge the generate synthetic dataset to represent one Metagenome."""
 
@@ -145,36 +142,46 @@ class MergeSynFiles(luigi.Task):
 
     def output(self):
         """Define expected ouputs."""
+        out_dir = os.path.abspath(self.out_dir)
         paired = self.art_options['paired']
+        out_prefix = self.metagenome_options['metagenome_prefix']
         if paired is True:
-            out_file = self.metagenome_options()
+            fr = os.path.join(out_dir, out_prefix + "R2.fq")
+        elif paired is False:
+            fr = os.path.join(out_dir, out_prefix + ".fq")
+        return LocalTarget(fr)
 
     def run(self):
         """Concatenate files from all simulations."""
+        out_dir = os.path.abspath(self.out_dir)
         if self.metagenome is True:
             out_prefix = self.metagenome_options['metagenome_prefix']
             if self.art_options['paired'] is True:
                 fq1_list = []
                 fq2_list = []
-                for fq in os.listdir(self.out_dir):
+                out_dir_files = os.listdir(out_dir)
+                for fq in out_dir_files:
+                    fq = os.path.join(out_dir, fq)
                     if fq.endswith("fq"):
                         if "1.fq" in fq:
                             fq1_list.append(fq)
                         elif "2.fq" in fq:
                             fq2_list.append(fq)
-                fq1_files = sorted(fq1_list).extend((">", out_prefix + "1.fq"))
-                fq2_files = sorted(fq2_list).extend((">", out_prefix + "2.fq"))
-                cat_fq1_cmd = cat[fq1_files]
-                cat_fq2_cmd = cat[fq2_files]
+                fq1_files = sorted(fq1_list)
+                fq1_out = os.path.join(out_dir, out_prefix + "R1.fq")
+                fq2_files = sorted(fq2_list)
+                fq2_out = os.path.join(out_dir, out_prefix + "R2.fq")
+                cat_fq1_cmd = cat[fq1_files] > fq1_out
+                cat_fq2_cmd = cat[fq2_files] > fq2_out
                 cat_fq1_cmd()
                 cat_fq2_cmd()
             elif self.art_options['paired'] is False:
                 fq_list = []
-                for fq in os.listdir(self.out_dir):
+                for fq in os.listdir(out_dir):
                     if fq.endswith(".fq"):
                         fq_list.append(fq)
-                fq_cat_options = fq_list.extend((">", out_prefix + ".fq"))
-                cat_fq_cmd = cat[fq_cat_options]
+                fq_out = os.path.join(out_dir, out_prefix + ".fq")
+                cat_fq_cmd = cat[fq_list] > fq_out
                 cat_fq_cmd()
 
             if self.art_options['samout'] is True:
@@ -203,3 +210,8 @@ class MergeSynFiles(luigi.Task):
             pass
 
 
+def move_files(ext, source, dest):
+    """A simple function that iteratively moves that have given extension."""
+    for file in os.listdir(source):
+        if file.endswith(ext):
+            shutil.move(file, dest)
