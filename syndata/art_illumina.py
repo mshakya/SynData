@@ -45,7 +45,7 @@ def call_art_illumina(in_fasta, art_para_dic):
                       "seqSys": "--seqSys"}
 
     art_options = ["--in", in_fasta]
-    for key, value in art_para_dic.iteritems():
+    for key, value in art_para_dic.items():
         if isinstance(value, bool):
             if value is True:
                 art_options.append(art_option_dic[key])
@@ -87,11 +87,12 @@ class RunArtIllumina(luigi.Task):
 
     def output(self):
         """ART output."""
+        out_dir = os.path.abspath(self.out_dir)
         paired = self.art_options['paired']
         if paired is True:
-            out_file = self.out_dir + "/" + self.art_options['out'] + "1.fq"
+            out_file = os.path.join(out_dir, self.ref_fasta.split(".")[0] + "1.fq")
         else:
-            out_file = self.art_options['out'] + ".fq"
+            out_file = os.path.join(out_dir, self.ref_fasta.split(".")[0] + ".fq")
         return LocalTarget(out_file)
 
     def run(self):
@@ -154,12 +155,12 @@ class MergeSynFiles(luigi.Task):
     def run(self):
         """Concatenate files from all simulations."""
         out_dir = os.path.abspath(self.out_dir)
+        out_dir_files = os.listdir(out_dir)
         if self.metagenome is True:
             out_prefix = self.metagenome_options['metagenome_prefix']
             if self.art_options['paired'] is True:
                 fq1_list = []
                 fq2_list = []
-                out_dir_files = os.listdir(out_dir)
                 for fq in out_dir_files:
                     fq = os.path.join(out_dir, fq)
                     if fq.endswith("fq"):
@@ -177,26 +178,27 @@ class MergeSynFiles(luigi.Task):
                 cat_fq2_cmd()
             elif self.art_options['paired'] is False:
                 fq_list = []
-                for fq in os.listdir(out_dir):
+                for fq in out_dir_files:
+                    fq = os.path.join(out_dir, fq)
                     if fq.endswith(".fq"):
                         fq_list.append(fq)
                 fq_out = os.path.join(out_dir, out_prefix + ".fq")
                 cat_fq_cmd = cat[fq_list] > fq_out
                 cat_fq_cmd()
-
             if self.art_options['samout'] is True:
                 errfree_sams = []
                 regular_sams = []
-                for sam in os.listdir(self.out_dir):
+                for sam in out_dir_files:
+                    sam = os.path.join(out_dir, sam)
                     if sam.endswith("sam"):
                         if "errFree" in sam:
                             errfree_sams.append(sam)
                         else:
                             regular_sams.append(sam)
-                reg_cat_options = regular_sams.extend((">", out_prefix + ".sam"))
-                ef_cat_options = errfree_sams.extend((">", out_prefix + ".sam"))
-                cat_reg_cmd = cat[reg_cat_options]
-                cat_ef_cmd = cat[ef_cat_options]
+                reg_cat_files = os.path.join(out_dir, out_prefix + ".sam")
+                ef_cat_files = os.path.join(out_dir, out_prefix + "_errFree.sam")
+                cat_reg_cmd = cat[regular_sams] > reg_cat_files
+                cat_ef_cmd = cat[errfree_sams] > ef_cat_files
                 cat_reg_cmd()
                 cat_ef_cmd()
 

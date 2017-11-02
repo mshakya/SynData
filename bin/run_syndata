@@ -71,6 +71,8 @@ def main():
 
     no_of_jobs = sum(1 for x in fasta_input)
     ref_list = get_files_list(config['in_folder'], (".fasta", ".fna"))
+    if not os.path.exists(config['out_folder']):
+        os.makedirs(config['out_folder'])
     luigi.interface.build([art_illumina.RunAllArtIllumina(ref_list=list(ref_list),
                                                           art_options=art_illumina_config,
                                                           metagenome=config['metagenome'],
