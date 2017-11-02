@@ -39,7 +39,7 @@ def test_RunArtIlluminaPaired(tmpdir):
     """
     Test if this first luigi class works
 
-    this is a way to test a class of luigi
+    tts runs art illumina on one sample (fasta)
 
     """
     luigi.interface.build([art_illumina.RunArtIllumina(ref_fasta="tests/data/E_coli.fasta", 
@@ -54,11 +54,12 @@ def test_RunArtIlluminaPaired(tmpdir):
     assert 'test1.fq' in file_basenames
     assert 'test2.fq' in file_basenames
 
+
 def test_RunArtIlluminaSingle(tmpdir):
     """
     Test if this first luigi class works
 
-    this is a way to test a class of luigi
+    it doesnt generate paired, maybe because MS or MiSeq is selected
 
     """
     luigi.interface.build([art_illumina.RunArtIllumina(ref_fasta="tests/data/E_coli.fasta", 
@@ -73,3 +74,23 @@ def test_RunArtIlluminaSingle(tmpdir):
     assert 'test_errFree.sam' in file_basenames
     assert 'test.sam' in file_basenames
     assert 'test1.fq' in file_basenames
+
+
+def test_RunAllArtIllumina(tmpdir):
+    """
+    Test of the luigi wrapper task works
+    
+    """
+    luigi.interface.build([art_illumina.RunAllArtIllumina(ref_list=["tests/data/E_coli.fasta", "tests/data/GCA_000017985.1_ASM1798v1_genomic.fna"],
+                                                          art_options={'paired':True, 'samout': True,
+                                                       'noALN':True, 'mflen': 2000, 'sdev': 10, 'errfree':True,
+                                                       'seqSys':'MS', 'len': 200, 'out': 'test', 'fcov': 1},
+                                                          metagenome={'metagenome': True},
+                                                          distribution='equal',
+                                                          out_dir=tmpdir)],local_scheduler=True, workers=1)
+    file_basenames = [os.path.basename(x) for x in tmpdir.listdir()] 
+    print(file_basenames)
+    assert(len(tmpdir.listdir())) == 8
+    assert 'E_coli_errFree.sam' in file_basenames
+    assert 'E_coli.sam' in file_basenames
+
