@@ -122,8 +122,7 @@ echo "--------------------------------------------------------------------------
                            installing art_illumina
 --------------------------------------------------------------------------------
 "
-
-conda install -c bioconda art 
+conda install --yes -c bioconda art p $ROOTDIR/thirdParty/miniconda
 ln -sf $ROOTDIR/thirdParty/miniconda/bin/art_illumina $ROOTDIR/bin/art_illumina
 echo "--------------------------------------------------------------------------
                            installed cpanm v2.00
