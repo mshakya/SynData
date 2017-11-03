@@ -112,6 +112,10 @@ checkLocalInstallation()
 }
 
 ################################################################################
+
+
+
+
 install_art_illumina()
 {
 echo "--------------------------------------------------------------------------
@@ -128,6 +132,20 @@ echo "--------------------------------------------------------------------------
 
 }
 
+################################################################################
+if ( checkSystemInstallation conda )
+then
+  echo "conda is found"
+  if [ -d "$ROOTDIR/thirdParty/miniconda" ]; then
+    echo "conda is installed and pointed to right environment"  
+  else
+    echo "Creating a separate conda enviroment ..."
+    conda create --yes -p $ROOTDIR/thirdParty/miniconda
+  fi
+else
+  echo "conda was not found"
+  install_miniconda
+fi
 ################################################################################
 if ( checkSystemInstallation art_illumina )
 then
