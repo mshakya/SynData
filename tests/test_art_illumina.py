@@ -6,8 +6,12 @@ from __future__ import print_function
 import pytest
 import luigi
 import os
+dir_path = os.path.dirname(os.path.realpath(__file__))
+lib_path = os.path.abspath(os.path.join(dir_path, '..'))
+bin_path = os.path.join(lib_path, 'bin')
+sys.path.append(lib_path)
+os.environ["PATH"] += os.pathsep + bin_path
 from syndata import art_illumina
-
 
 
 def test_call_art_illumina():
