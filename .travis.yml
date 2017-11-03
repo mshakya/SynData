@@ -23,8 +23,9 @@ deploy:
   user: mshakya
 env:
 - TOXENV=py36
-install:
+before_install:
 - ./INSTALL.sh
+install:
 - pip install -U tox
 language: python
 python: 3.6
