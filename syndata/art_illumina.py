@@ -151,49 +151,39 @@ class MergeSynFiles(luigi.Task):
         out_dir_files = os.listdir(out_dir)
         if self.metagenome is True:
             out_prefix = self.metagenome_options['metagenome_prefix']
-            if self.art_options['paired'] is True:
-                fq1_list = []
-                fq2_list = []
-                for fq in out_dir_files:
-                    fq = os.path.join(out_dir, fq)
-                    if fq.endswith("fq"):
-                        if "1.fq" in fq:
-                            fq1_list.append(fq)
-                        elif "2.fq" in fq:
-                            fq2_list.append(fq)
-                fq1_files = sorted(fq1_list)
-                fq1_out = os.path.join(out_dir, out_prefix + "R1.fq")
-                fq2_files = sorted(fq2_list)
-                fq2_out = os.path.join(out_dir, out_prefix + "R2.fq")
-                cat_fq1_cmd = cat[fq1_files] > fq1_out
-                cat_fq2_cmd = cat[fq2_files] > fq2_out
-                cat_fq1_cmd()
-                cat_fq2_cmd()
-            elif self.art_options['paired'] is False:
-                fq_list = []
-                for fq in out_dir_files:
-                    fq = os.path.join(out_dir, fq)
-                    if fq.endswith(".fq"):
-                        fq_list.append(fq)
-                fq_out = os.path.join(out_dir, out_prefix + ".fq")
-                cat_fq_cmd = cat[fq_list] > fq_out
-                cat_fq_cmd()
-            if self.art_options['samout'] is True:
-                errfree_sams = []
-                regular_sams = []
-                for sam in out_dir_files:
-                    sam = os.path.join(out_dir, sam)
-                    if sam.endswith("sam"):
-                        if "errFree" in sam:
-                            errfree_sams.append(sam)
-                        else:
-                            regular_sams.append(sam)
-                reg_cat_files = os.path.join(out_dir, out_prefix + ".sam")
-                ef_cat_files = os.path.join(out_dir, out_prefix + "_errFree.sam")
-                cat_reg_cmd = cat[regular_sams] > reg_cat_files
-                cat_ef_cmd = cat[errfree_sams] > ef_cat_files
-                cat_reg_cmd()
-                cat_ef_cmd()
+            fq1_list = []
+            fq2_list = []
+            for fq in out_dir_files:
+                fq = os.path.join(out_dir, fq)
+                if fq.endswith("fq"):
+                    if "R1.fq" in fq:
+                        fq1_list.append(fq)
+                    elif "R2.fq" in fq:
+                        fq2_list.append(fq)
+            fq1_files = sorted(fq1_list)
+            fq1_out = os.path.join(out_dir, out_prefix + "_R1.fq")
+            fq2_files = sorted(fq2_list)
+            fq2_out = os.path.join(out_dir, out_prefix + "_R2.fq")
+            cat_fq1_cmd = cat[fq1_files] > fq1_out
+            cat_fq2_cmd = cat[fq2_files] > fq2_out
+            cat_fq1_cmd()
+            cat_fq2_cmd()
+        if self.art_options['samout'] is True:
+            errfree_sams = []
+            regular_sams = []
+            for sam in out_dir_files:
+                sam = os.path.join(out_dir, sam)
+                if sam.endswith("sam"):
+                    if "errFree" in sam:
+                        errfree_sams.append(sam)
+                    else:
+                        regular_sams.append(sam)
+            reg_cat_files = os.path.join(out_dir, out_prefix + ".sam")
+            ef_cat_files = os.path.join(out_dir, out_prefix + "_errFree.sam")
+            cat_reg_cmd = cat[regular_sams] > reg_cat_files
+            cat_ef_cmd = cat[errfree_sams] > ef_cat_files
+            cat_reg_cmd()
+            cat_ef_cmd()
 
             if self.art_options['noALN'] is False:
                 aln_files = []

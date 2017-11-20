@@ -69,7 +69,7 @@ def main():
 
     fasta_input = get_files_list(config['in_folder'], (".fasta", ".fna"))
 
-    no_of_jobs = sum(1 for x in fasta_input)
+    # no_of_jobs = sum(1 for x in fasta_input)
     ref_list = get_files_list(config['in_folder'], (".fasta", ".fna"))
     if not os.path.exists(config['out_folder']):
         os.makedirs(config['out_folder'])
@@ -84,8 +84,9 @@ def main():
                                                      art_options=art_illumina_config,
                                                      metagenome=config['metagenome'],
                                                      metagenome_options=metagenome_config,
-                                                     out_dir=config['out_folder'])],
-                          local_scheduler=True, workers=no_of_jobs)
+                                                     out_dir=config['out_folder'])
+                                                     ],
+                          local_scheduler=True, workers=1)
 
 
 def get_files_list(dir, ext):
