@@ -87,12 +87,8 @@ class RunArtIllumina(luigi.Task):
 
     def output(self):
         """ART output."""
-        out_dir = os.path.abspath(self.out_dir)
-        paired = self.art_options['paired']
-        if paired is True:
-            out_file = os.path.join(out_dir, self.ref_fasta.split(".")[0] + "1.fq")
-        else:
-            out_file = os.path.join(out_dir, self.ref_fasta.split(".")[0] + ".fq")
+        full_out_dir = os.path.abspath(self.out_dir)
+        out_file = os.path.join(full_out_dir, os.path.basename(self.ref_fasta.split(".")[0]) + "_R2.fq")
         return LocalTarget(out_file)
 
     def run(self):
@@ -126,7 +122,7 @@ class RunAllArtIllumina(luigi.WrapperTask):
             art_options_dic = dict(self.art_options)
             for ref_fasta in self.ref_list:
                 art_options_dic['fcov'] = cov_dic[ref_fasta]
-                art_options_dic['out'] = re.split('.fasta|.fna', os.path.basename(ref_fasta))[0]
+                art_options_dic['out'] = '_'.join((re.split('.fasta|.fna', os.path.basename(ref_fasta))[0], "R"))
                 yield RunArtIllumina(ref_fasta=ref_fasta,
                                      art_options=art_options_dic,
                                      out_dir=self.out_dir)
@@ -146,10 +142,7 @@ class MergeSynFiles(luigi.Task):
         out_dir = os.path.abspath(self.out_dir)
         paired = self.art_options['paired']
         out_prefix = self.metagenome_options['metagenome_prefix']
-        if paired is True:
-            fr = os.path.join(out_dir, out_prefix + "R2.fq")
-        elif paired is False:
-            fr = os.path.join(out_dir, out_prefix + ".fq")
+        fr = os.path.join(out_dir, out_prefix + "R2.fq")
         return LocalTarget(fr)
 
     def run(self):
