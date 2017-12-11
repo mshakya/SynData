@@ -9,12 +9,13 @@ metagenome: True
 metagenome_options:
     distribution: equal
     metagenome_prefix: test_meta
+    total_reads: 892777
 
 art_illumina:
     errfree: True
     paired: True
-    fcov: 10
-    seqSys: MS
+    # fcov: 10
+    seqSys: MSv3
     out: ref
     sdev: 10
     samout: True

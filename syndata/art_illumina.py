@@ -7,7 +7,7 @@ import re
 import luigi
 import shutil
 import csv
-from luigi import Parameter, LocalTarget, ExternalTask, ListParameter, DictParameter, BoolParameter
+from luigi import Parameter, LocalTarget, ExternalTask, ListParameter, DictParameter, BoolParameter, IntParameter
 from luigi.util import requires
 from plumbum.cmd import art_illumina, cat
 from syndata import coverage
@@ -112,6 +112,7 @@ class RunAllArtIllumina(luigi.WrapperTask):
     metagenome = BoolParameter(default=False)
     distribution = Parameter()
     out_dir = Parameter()
+    total_reads = IntParameter()
 
     def requires(self):
         """A wrapper for running art illumina."""
@@ -119,7 +120,7 @@ class RunAllArtIllumina(luigi.WrapperTask):
             for ref_fasta in self.ref_list:
                 yield RunArtIllumina(ref_fasta=ref_fasta, art_options=self.art_options)
         elif self.metagenome is True:
-            cov_dic = coverage.gen_dist(self.ref_list, self.distribution)
+            cov_dic = coverage.gen_dist(self.ref_list, self.distribution, self.total_reads)
             out_cov_file = os.path.join(self.out_dir, "coverage_info.csv")
             with open(out_cov_file,'w') as f:
                 writer = csv.writer(f)
@@ -127,7 +128,8 @@ class RunAllArtIllumina(luigi.WrapperTask):
                     writer.writerow([key, value])
             art_options_dic = dict(self.art_options)
             for ref_fasta in self.ref_list:
-                art_options_dic['fcov'] = cov_dic[ref_fasta]
+                art_options_dic['rcount'] = cov_dic[ref_fasta]
+                # art_options_dic['fcov'] = cov_dic[ref_fasta]
                 art_options_dic['out'] = '_'.join((re.split('.fasta|.fna', os.path.basename(ref_fasta))[0], "R"))
                 yield RunArtIllumina(ref_fasta=ref_fasta,
                                      art_options=art_options_dic,
@@ -142,6 +144,7 @@ class MergeSynFiles(luigi.Task):
     metagenome_options = DictParameter()
     art_options = DictParameter()
     out_dir = Parameter()
+    total_reads = IntParameter()
 
     def output(self):
         """Define expected ouputs."""

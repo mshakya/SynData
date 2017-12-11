@@ -76,6 +76,7 @@ def main():
     luigi.interface.build([art_illumina.RunAllArtIllumina(ref_list=list(ref_list),
                                                           art_options=art_illumina_config,
                                                           metagenome=config['metagenome'],
+                                                          total_reads=metagenome_config['total_reads'],
                                                           distribution=metagenome_config['distribution'],
                                                           out_dir=config['out_folder']),
 
@@ -83,6 +84,7 @@ def main():
                                                      ref_list=list(ref_list),
                                                      art_options=art_illumina_config,
                                                      metagenome=config['metagenome'],
+                                                     total_reads=metagenome_config['total_reads'],
                                                      metagenome_options=metagenome_config,
                                                      out_dir=config['out_folder'])
                                                      ],
